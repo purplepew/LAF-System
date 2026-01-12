@@ -24,10 +24,15 @@ def ensure_tables():
             )
         """)
 
+        # Updated items table with new columns
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
+                item_name TEXT,       -- Matches "Item Name"
+                landmark TEXT,        -- Matches "Landmark"
+                date_found TEXT,      -- Matches "Date Found"
+                time_found TEXT,      -- Matches "Time Found"
                 type TEXT CHECK(type IN ('LOST', 'FOUND')),
                 status TEXT DEFAULT 'OPEN',
                 category TEXT,

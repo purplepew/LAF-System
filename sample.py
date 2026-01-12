@@ -3,6 +3,14 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter import ttk, filedialog
 
+# IMPORT FROM BACKEND
+from backend.lib.queries.items import get_all_items
+from backend.lib.utils import ensure_tables
+
+# make sure database is set up
+ensure_tables()
+
+
 ctk.set_appearance_mode("System")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
@@ -218,6 +226,18 @@ class DashboardFrame(ctk.CTkFrame):
         for col in columns:
             tree.heading(col, text=col.capitalize() )
             tree.column(col, width=195)
+
+        # --- ADDED CODE START ---
+        # 1. Hardcoded array (list) with tuples
+        items = get_all_items()
+
+        for item in items:
+            # We only need the first 4 items: Name, Landmark, Date, Time
+            # item[0] is Name, item[1] is Landmark, etc.
+            row_data = (item[0], item[1], item[2], item[3])
+            
+            tree.insert("", "end", values=row_data)
+        # --- ADDED CODE END ---
 
         scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=tree.yview)
         scroll_y.place(x=975, y=335, height=265)
