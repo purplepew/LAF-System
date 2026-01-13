@@ -5,10 +5,13 @@ from tkinter import ttk, filedialog
 
 # IMPORT FROM BACKEND
 from backend.lib.queries.items import get_all_items
+from backend.lib.mutations.items import create_new_item
+from backend.lib.queries.items import get_all_items
 from backend.lib.utils import ensure_tables
 
 # make sure database is set up
 ensure_tables()
+
 
 
 ctk.set_appearance_mode("System")  # Modes: system (default), light, dark
@@ -48,12 +51,10 @@ class App(ctk.CTk):
     def show_frame(self, frame):
         frame.tkraise()
 
-
-
-
-
-
-
+         # Check if the frame has a "load_data" function
+        # If yes, run it to refresh the table
+        if hasattr(frame, "load_data"):
+            frame.load_data()
 
 
 class LoginFrame(ctk.CTkFrame):
@@ -228,7 +229,6 @@ class DashboardFrame(ctk.CTkFrame):
             tree.column(col, width=195)
 
         # --- ADDED CODE START ---
-        # 1. Hardcoded array (list) with tuples
         items = get_all_items()
 
         for item in items:
@@ -430,6 +430,29 @@ class ViewLostItemFrame(ctk.CTkFrame):
         scroll_y.place(x=975, y=170, height=265)
         tree.configure(yscrollcommand=scroll_y.set)
 
+         # --- TABLE SETUP ---
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", background="#2b9348", font=("Poppins", 10, "bold"), foreground="white")
+        
+        # We use 4 columns to match our database query
+        columns = ("Item Name", "Landmark", "Date Found", "Time Found")
+        
+        # We use self.tree so we can access it in other functions
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
+        self.tree.place(x=210, y=135)
+        
+        for col in columns:
+            self.tree.heading(col, text=col.capitalize())
+            self.tree.column(col, width=195)
+
+        scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        scroll_y.place(x=975, y=170, height=265)
+        self.tree.configure(yscrollcommand=scroll_y.set)
+
+        # --- Load Initial Data ---
+        self.load_data()
+
         ctk.CTkButton(
             self,
             text="MENU",
@@ -486,32 +509,73 @@ class ViewLostItemFrame(ctk.CTkFrame):
         ).place(x=0, y=224)
 
 
+    def load_data(self):
+        """Fetches fresh data from the database and updates the table."""
+        # 1. Clear the current table
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
+        # 2. Fetch new data
+        try:
+            items = get_all_items() # Returns list of tuples
+            
+            # 3. Insert data
+            for item in items:
+                # Our query returns: (name, landmark, date, time, type, description)
+                # We only need the first 4 for this table
+                row_values = (item[0], item[1], item[2], item[3])
+                self.tree.insert("", "end", values=row_values)
+                
+            print(f"Loaded {len(items)} items into the table.") # Debug message
+            
+        except Exception as e:
+            print(f"Error loading data: {e}")
 
 
 class ReportMissingItemFrame(ctk.CTkFrame):
+
+    
+
     def __init__(self, parent):
         super().__init__(parent)
 
         self.place(relwidth=1, relheight=1)
 
 
+        # --- Layout & Header ---
         ctk.CTkFrame(self, width=800, height=70, fg_color="#2b9348", corner_radius=0).place(x=201, y=0)
         ctk.CTkFrame(self, width=200, height=330, fg_color="#2b9348", corner_radius=0).place(x=0, y=275)
         ctk.CTkLabel(self, font=("Poppins", 20, "bold"),text="Lost and Found System", fg_color="#2b9348", ).place(x=230, y=17)
-
         ctk.CTkFrame(self, width=500, height=440, fg_color="#6c757d").place(x=350, y=130)
 
+        # --- FIXED INPUTS ---
+        
+        # 1. Item Name
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Item Name", fg_color="#6c757d", text_color="White").place(x=370, y=140)
-        ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="Name of Item", corner_radius=7).place(x=370, y=165)
+        self.name_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="Name of Item", corner_radius=7)
+        self.name_entry.place(x=370, y=165)
+
+        # 2. Landmark
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Landmark", fg_color="#6c757d", text_color="White").place(x=370, y=200)
-        ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="Enter Landmark", corner_radius=7).place(x=370, y=225)
+        self.landmark_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="Enter Landmark", corner_radius=7)
+        self.landmark_entry.place(x=370, y=225)
+
+        # 3. Date Found
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Date Found", fg_color="#6c757d", text_color="White").place(x=370, y=260)
-        ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="dd/mm/yyyy", corner_radius=7).place(x=370, y=285)
+        self.date_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="dd/mm/yyyy", corner_radius=7)
+        self.date_entry.place(x=370, y=285)
+
+        # 4. Time Found
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Time Found", fg_color="#6c757d", text_color="White").place(x=370, y=320)
-        ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="--:-- --", corner_radius=7).place(x=370, y=345)
+        self.time_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="--:-- --", corner_radius=7)
+        self.time_entry.place(x=370, y=345)
+
+        # 5. Description
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Description", fg_color="#6c757d", text_color="White").place(x=370, y=380)
-        ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="e.g. Color: Blue Cotton, with money inside", corner_radius=7).place(x=370, y=405)
+        self.desc_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="e.g. Color: Blue Cotton, with money inside", corner_radius=7)
+        self.desc_entry.place(x=370, y=405)
+
+        # Image Button
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Insert Image", fg_color="#6c757d", text_color="White").place(x=370, y=440)
         ctk.CTkButton(
             self,
@@ -525,6 +589,7 @@ class ReportMissingItemFrame(ctk.CTkFrame):
             command=browse_image
         ).place(x=370, y=465)
 
+        # Submit Button
         ctk.CTkButton(
             self,
             text="Submit",
@@ -534,10 +599,11 @@ class ReportMissingItemFrame(ctk.CTkFrame):
             fg_color="#2b9348",
             corner_radius=5,
             border_width=0,
-            #command=browse_image
+            command=self.submit_form 
         ).place(x=370, y=520)
 
 
+        # Belwo are the menus
         ctk.CTkButton(
             self,
             text="MENU",
@@ -593,7 +659,29 @@ class ReportMissingItemFrame(ctk.CTkFrame):
             command=lambda: parent.show_frame(parent.reportmissingitem_frame)
         ).place(x=0, y=224)
 
+    def submit_form(self):
+        """Gets text from entries and saves to database."""
+        # 1. Get the text from the inputs
+        i_name = self.name_entry.get()
+        i_landmark = self.landmark_entry.get()
+        i_date = self.date_entry.get()
+        i_time = self.time_entry.get()
+        i_desc = self.desc_entry.get()
 
+                # 2. Call the database function
+                # We use '1' as a temporary user_id (1 is the user_id of Leeex lex@gmail.com)
+                # We use 'LOST' as the default type (you can change this logic later)
+        try:
+            create_new_item(1, i_name, i_landmark, i_date, i_time, "LOST", i_desc)
+            print("Item saved successfully!")
+                    
+                # Optional: Clear the boxes after submitting
+            self.name_entry.delete(0, 'end')
+            self.landmark_entry.delete(0, 'end')
+                    # ... clear others ...
+                    
+        except Exception as e:
+            print(f"Error saving: {e}")
 
 
 

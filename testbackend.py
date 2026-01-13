@@ -10,4 +10,6 @@ ensure_tables()
 # use only once to populate the items table
 # seed_items() 
 
+create_new_user("Leeex", "lexe@gmail.com")
+
 print(get_all_users())
