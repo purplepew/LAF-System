@@ -5,14 +5,16 @@ from tkinter import ttk, filedialog
 
 # IMPORT FROM BACKEND
 from backend.lib.queries.items import get_all_items
-from backend.lib.mutations.items import create_new_item
 from backend.lib.queries.items import get_all_items
+from backend.lib.queries.users import login_user
+from backend.lib.queries.users import get_user_info
+
+from backend.lib.mutations.items import create_new_item
+from backend.lib.mutations.users import register_user
 from backend.lib.utils import ensure_tables
 
 # make sure database is set up
 ensure_tables()
-
-
 
 ctk.set_appearance_mode("System")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -32,6 +34,9 @@ class App(ctk.CTk):
         self.title("Frame Switching")
         self.geometry("1000x600")
         self.resizable(False,False)
+
+        # --- NEW: Store the current user's ID here ---
+        self.current_user_id = None 
 
         # Create frames
         self.login_frame = LoginFrame(self)
@@ -60,31 +65,48 @@ class App(ctk.CTk):
 class LoginFrame(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.parent = parent # Save parent so we can access current_user_id
         self.place(relwidth=1, relheight=1)
 
-        ctk.CTkLabel(self, font=("Poppins", 40, "bold"),text="Lost and Found System", fg_color="transparent").pack( pady=50)
+        # Labels
+        ctk.CTkLabel(self, font=("Poppins", 40, "bold"), text="Lost and Found System", fg_color="transparent").pack(pady=50)
+        ctk.CTkLabel(self, font=("Poppins", 25, "bold"), text="Login", fg_color="transparent").pack()
 
-        ctk.CTkLabel(self, font=("Poppins", 25,"bold"),text="Login", fg_color="transparent").pack()
+        # --- INPUTS (Changed to self.) ---
+        self.username_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Username")
+        self.username_entry.pack(pady=8)
 
-        loginUsername = ctk.CTkEntry(self, font=("Poppins", 15),width=240, height=40,placeholder_text="Username")
-        loginUsername.pack(pady=8)
+        self.password_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Password", show="*")
+        self.password_entry.pack(pady=8)
 
-        loginPassword = ctk.CTkEntry(self, font=("Poppins", 15),width=240, height=40,placeholder_text="Password")
-        loginPassword.pack(pady=8)
+        # --- BUTTONS ---
+        # Changed command to self.handle_login
+        ctk.CTkButton(master=self, font=("Poppins", 15), fg_color="#2b9348", width=240, height=40, hover=True, text="Login", command=self.handle_login).pack(pady=8)
 
-        # Use CTkButton instead of tkinter Button
-        button = ctk.CTkButton(master=self, font=("Poppins", 15), fg_color="#2b9348", width=240, height=40, hover=True, text="Login", command=lambda: parent.show_frame(parent.dashboard_frame))
-        button.pack(pady=8)
+        ctk.CTkButton(master=self, font=("Poppins", 15), fg_color="#2b9348", width=240, height=40, hover=True, text="Sign Up", command=lambda: parent.show_frame(parent.signup_frame)).pack(pady=8)
 
-        button = ctk.CTkButton(master=self, font=("Poppins", 15), fg_color="#2b9348", width=240, height=40, hover=True, text="Sign Up", command=lambda: parent.show_frame(parent.signup_frame))
-        button.pack(pady=8)
+    def handle_login(self):
+        """Validates credentials."""
+        user = self.username_entry.get()
+        pw = self.password_entry.get()
 
-        # ctk.CTkButton(
-        #     self,
-        #     text="Login",
-        #     command=lambda: 
-        # ).pack()
+        # 1. Check DB
+        user_id = login_user(user, pw)
+
+        if user_id:
+            print(f"Login successful! User ID: {user_id}")
+            
+            # 2. Save User ID to the Main App (Session)
+            self.parent.current_user_id = user_id
+            
+            # 3. Clear inputs
+            self.username_entry.delete(0, 'end')
+            self.password_entry.delete(0, 'end')
+            
+            # 4. Go to Dashboard
+            self.parent.show_frame(self.parent.dashboard_frame)
+        else:
+            print("Invalid username or password.")
 
 
 
@@ -92,29 +114,63 @@ class LoginFrame(ctk.CTkFrame):
 
 
 
+# from database import register_user  <-- Add this at the top
 
 class SignupFrame(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.parent = parent  # We need to save 'parent' to switch frames later
         self.place(relwidth=1, relheight=1)
 
-        ctk.CTkLabel(self, font=("Poppins", 40, "bold"),text="Lost and Found System", fg_color="transparent").pack(pady=50)
-        ctk.CTkLabel(self, font=("Poppins", 23,"bold"),text="Create an Account", fg_color="transparent").pack()
-        signupUsername = ctk.CTkEntry(self, font=("Poppins", 15),width=240, height=40,placeholder_text="Username")
-        signupUsername.pack(pady=8)
-        signupPassword = ctk.CTkEntry(self, font=("Poppins", 15),width=240, height=40, placeholder_text="Password")
-        signupPassword.pack(pady=8)
-        signupEmail = ctk.CTkEntry(self, font=("Poppins", 15),width=240, height=40,placeholder_text="Email")
-        signupEmail.pack(pady=8)
-        button = ctk.CTkButton(master=self, font=("Poppins", 15),width=240, height=40, hover=True, text="Register", command=lambda: parent.show_frame(parent.login_frame))
-        button.pack(pady=10)
+        # Labels
+        ctk.CTkLabel(self, font=("Poppins", 40, "bold"), text="Lost and Found System", fg_color="transparent").pack(pady=50)
+        ctk.CTkLabel(self, font=("Poppins", 23, "bold"), text="Create an Account", fg_color="transparent").pack()
 
+        # --- INPUTS (Changed to self.variables) ---
+        self.username_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Username")
+        self.username_entry.pack(pady=8)
+
+        self.password_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Password", show="*") # Added show="*" to hide password
+        self.password_entry.pack(pady=8)
+
+        self.email_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Email")
+        self.email_entry.pack(pady=8)
+
+        # --- REGISTER BUTTON ---
+        # Calls the function handle_register
+        ctk.CTkButton(master=self, font=("Poppins", 15), width=240, height=40, hover=True, text="Register", command=self.handle_register).pack(pady=10)
+
+        # Back Button
         ctk.CTkButton(
             self,
-            text="Logout",
+            text="Back to Login",
             command=lambda: parent.show_frame(parent.login_frame)
         ).pack()
+
+    def handle_register(self):
+        """Gets input and saves to database."""
+        # 1. Get the text
+        user = self.username_entry.get()
+        pw = self.password_entry.get()
+        mail = self.email_entry.get()
+
+        # 2. Simple Validation (Check if empty)
+        if not user or not pw or not mail:
+            print("Error: All fields are required.")
+            return
+
+        # 3. Call the database function
+        success = register_user(user, pw, mail)
+
+        if success:
+            print("Account created! Redirecting to login...")
+            # Clear inputs
+            self.username_entry.delete(0, 'end')
+            self.password_entry.delete(0, 'end')
+            self.email_entry.delete(0, 'end')
+            
+            # Switch to Login Frame
+            self.parent.show_frame(self.parent.login_frame)
 
 
 
@@ -315,31 +371,45 @@ class DashboardFrame(ctk.CTkFrame):
 class UserProfileFrame(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.parent = parent
         self.place(relwidth=1, relheight=1)
 
-
+        # --- Header & Background ---
         ctk.CTkFrame(self, width=800, height=70, fg_color="#2b9348", corner_radius=0).place(x=201, y=0)
         ctk.CTkFrame(self, width=200, height=330, fg_color="#2b9348", corner_radius=0).place(x=0, y=275)
-        ctk.CTkLabel(self, font=("Poppins", 20, "bold"),text="Lost and Found System", fg_color="#2b9348", ).place(x=230, y=17)
+        ctk.CTkLabel(self, font=("Poppins", 20, "bold"), text="Lost and Found System", fg_color="#2b9348").place(x=230, y=17)
 
-        #Frame
+        # --- Profile Card ---
         ctk.CTkFrame(self, width=600, height=300, fg_color="#495057", corner_radius=20).place(x=300, y=150)
 
-        ctk.CTkLabel(self, font=("Poppins", 25, "bold"), text="Lexter D. Silva", fg_color="#495057", ).place(x=320, y=230)
+        # 1. BIG NAME HEADER (Dynamic)
+        self.header_name_label = ctk.CTkLabel(self, font=("Poppins", 25, "bold"), text="Loading...", fg_color="#495057")
+        self.header_name_label.place(x=320, y=230)
 
-        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Name:", fg_color="#495057", ).place(x=320, y=300)
-        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Email:", fg_color="#495057", ).place(x=320, y=340)
-        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Password:", fg_color="#495057", ).place(x=320, y=380)
+        # --- LABELS ---
+        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Name:", fg_color="#495057").place(x=320, y=300)
+        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Email:", fg_color="#495057").place(x=320, y=340)
+        ctk.CTkLabel(self, font=("Poppins", 15, "bold"), text="Password:", fg_color="#495057").place(x=320, y=380)
         
-        ctk.CTkLabel(self, font=("Poppins", 15), text="Lexter Silva", fg_color="#495057", ).place(x=450, y=300)
-        ctk.CTkLabel(self, font=("Poppins", 15), text="lextersilva@gmail.com", fg_color="#495057", ).place(x=450, y=340)
-        ctk.CTkLabel(self, font=("Poppins", 15), text="********", fg_color="#495057", ).place(x=450, y=380)
+        # --- VALUES (Dynamic - Changed to self.) ---
+        self.name_value = ctk.CTkLabel(self, font=("Poppins", 15), text="...", fg_color="#495057")
+        self.name_value.place(x=450, y=300)
 
-        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825,y=300)
-        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825,y=340)
-        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825,y=380)
+        self.email_value = ctk.CTkLabel(self, font=("Poppins", 15), text="...", fg_color="#495057")
+        self.email_value.place(x=450, y=340)
 
+        self.pass_value = ctk.CTkLabel(self, font=("Poppins", 15), text="********", fg_color="#495057")
+        self.pass_value.place(x=450, y=380)
+
+        # --- EDIT BUTTONS ---
+        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=300)
+        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=340)
+        ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=380)
+
+        # ... (Menu Buttons remain the same) ...
+        # (Copy your existing menu buttons here)
+
+    
         ctk.CTkButton(
             self,
             text="MENU",
@@ -395,6 +465,31 @@ class UserProfileFrame(ctk.CTkFrame):
             command=lambda: parent.show_frame(parent.login_frame)
         ).place(x=0, y=224)
 
+    def load_data(self):
+        """Fetches current user info and updates labels."""
+        # 1. Get the current user ID from the main App class
+        # Note: We use self.master because 'parent' passed in __init__ is stored as master in CTkFrame
+        current_id = self.master.current_user_id
+
+        if current_id:
+            try:
+                # 2. Fetch from DB
+                user_info = get_user_info(current_id)
+                
+                if user_info:
+                    # user_info is (username, email)
+                    username = user_info[0]
+                    email = user_info[1]
+
+                    # 3. Update Labels
+                    self.header_name_label.configure(text=username)
+                    self.name_value.configure(text=username)
+                    self.email_value.configure(text=email)
+            except Exception as e:
+                print(f"Error loading profile: {e}")
+        else:
+            print("No user logged in.")
+            self.header_name_label.configure(text="Guest")
 
 
 
@@ -505,7 +600,7 @@ class ViewLostItemFrame(ctk.CTkFrame):
             for item in items:
                 # Our query returns: (name, landmark, date, time, type, description)
                 # We only need the first 4 for this table
-                row_values = (item[0], item[1], item[2], item[3], 'YSER 1', "pls Claim")
+                row_values = (item[0], item[1], item[2], item[3], item[4], "Claim")
                 self.tree.insert("", "end", values=row_values)
                 
             print(f"Loaded {len(items)} items into the table.") # Debug message

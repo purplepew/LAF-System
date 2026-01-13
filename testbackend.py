@@ -1,5 +1,4 @@
 from backend.lib.queries.users import get_all_users
-from backend.lib.mutations.users import create_new_user
 from backend.lib.mutations.items import create_new_item, seed_items
 from backend.lib.utils import ensure_tables
 from backend.lib.config import NAME_MIN_LENGTH, NAME_MAX_LENGTH, EMAIL_MIN_LENGTH, EMAIL_MAX_LENGTH
@@ -9,7 +8,3 @@ ensure_tables()
 
 # use only once to populate the items table
 # seed_items() 
-
-create_new_user("Leeex", "lexe@gmail.com")
-
-print(get_all_users())
