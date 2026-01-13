@@ -78,6 +78,9 @@ class LoginFrame(ctk.CTkFrame):
 
         self.password_entry = ctk.CTkEntry(self, font=("Poppins", 15), width=240, height=40, placeholder_text="Password", show="*")
         self.password_entry.pack(pady=8)
+        
+        self.error_label = ctk.CTkLabel(self, text="", text_color="red", font=("Poppins", 12))
+        self.error_label.pack(pady=5)
 
         # --- BUTTONS ---
         # Changed command to self.handle_login
@@ -96,16 +99,16 @@ class LoginFrame(ctk.CTkFrame):
         if user_id:
             print(f"Login successful! User ID: {user_id}")
             
-            # 2. Save User ID to the Main App (Session)
+            # Clear error if success
+            self.error_label.configure(text="") 
+
             self.parent.current_user_id = user_id
-            
-            # 3. Clear inputs
             self.username_entry.delete(0, 'end')
             self.password_entry.delete(0, 'end')
-            
-            # 4. Go to Dashboard
             self.parent.show_frame(self.parent.dashboard_frame)
         else:
+            # --- SHOW ERROR HERE ---
+            self.error_label.configure(text="Invalid username or password.")
             print("Invalid username or password.")
 
 
