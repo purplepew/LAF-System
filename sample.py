@@ -419,32 +419,15 @@ class ViewLostItemFrame(ctk.CTkFrame):
         #style.configure("Treeview", background="#2b9348")
         
         columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Reported By", "Action")
-        tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
-        tree.place(x=210, y=135)
-        
-        for col in columns:
-            tree.heading(col, text=col.capitalize() )
-            tree.column(col, width=130)
 
-        scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=tree.yview)
-        scroll_y.place(x=975, y=170, height=265)
-        tree.configure(yscrollcommand=scroll_y.set)
-
-         # --- TABLE SETUP ---
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("Treeview.Heading", background="#2b9348", font=("Poppins", 10, "bold"), foreground="white")
-        
-        # We use 4 columns to match our database query
-        columns = ("Item Name", "Landmark", "Date Found", "Time Found")
-        
         # We use self.tree so we can access it in other functions
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
         self.tree.place(x=210, y=135)
         
+        
         for col in columns:
-            self.tree.heading(col, text=col.capitalize())
-            self.tree.column(col, width=195)
+            self.tree.heading(col, text=col.capitalize() )
+            self.tree.column(col, width=130)
 
         scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
         scroll_y.place(x=975, y=170, height=265)
@@ -508,7 +491,6 @@ class ViewLostItemFrame(ctk.CTkFrame):
             command=lambda: parent.show_frame(parent.reportmissingitem_frame)
         ).place(x=0, y=224)
 
-
     def load_data(self):
         """Fetches fresh data from the database and updates the table."""
         # 1. Clear the current table
@@ -523,13 +505,14 @@ class ViewLostItemFrame(ctk.CTkFrame):
             for item in items:
                 # Our query returns: (name, landmark, date, time, type, description)
                 # We only need the first 4 for this table
-                row_values = (item[0], item[1], item[2], item[3])
+                row_values = (item[0], item[1], item[2], item[3], 'YSER 1', "pls Claim")
                 self.tree.insert("", "end", values=row_values)
                 
             print(f"Loaded {len(items)} items into the table.") # Debug message
             
         except Exception as e:
             print(f"Error loading data: {e}")
+
 
 
 class ReportMissingItemFrame(ctk.CTkFrame):
