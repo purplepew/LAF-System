@@ -57,4 +57,9 @@ class App(ctk.CTk):
                 frame.load_data()
             except Exception as e:
                 print(f"Error loading frame data: {e}")
+    
+    def logout(self) -> None:
+        """Log out the current user and return to login screen."""
+        self.current_user_id = None
+        self.show_frame(self.login_frame)
 

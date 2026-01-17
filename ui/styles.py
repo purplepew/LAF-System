@@ -173,6 +173,53 @@ def create_nav_button(
     )
 
 
+def create_menu_label(parent: ctk.CTkFrame) -> ctk.CTkLabel:
+    """
+    Create a non-clickable menu label for logged-in users.
+    
+    Args:
+        parent: Parent widget
+        
+    Returns:
+        CTkLabel widget
+    """
+    return ctk.CTkLabel(
+        parent,
+        text="MENU",
+        font=(FONT_FAMILY, 15, "bold"),
+        height=70,
+        width=200,
+        fg_color=PRIMARY_COLOR,
+        corner_radius=0
+    )
+
+
+def create_logout_button(
+    parent: ctk.CTkFrame,
+    command: Optional[Callable] = None
+) -> ctk.CTkButton:
+    """
+    Create a logout button.
+    
+    Args:
+        parent: Parent widget
+        command: Command function to execute on click
+        
+    Returns:
+        CTkButton widget
+    """
+    return ctk.CTkButton(
+        parent,
+        text="Logout",
+        font=(FONT_FAMILY, 13, "bold"),
+        height=50,
+        width=200,
+        fg_color="#dc3545",
+        corner_radius=0,
+        command=command
+    )
+
+
 def create_header_frame(
     parent: ctk.CTkFrame,
     title: str = "Lost and Found System"

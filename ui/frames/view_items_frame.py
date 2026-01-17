@@ -6,7 +6,10 @@ import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as messagebox
 from typing import TYPE_CHECKING, Dict
-from ui.styles import create_header_frame, create_sidebar_frame, create_nav_button, create_button
+from ui.styles import (
+    create_header_frame, create_sidebar_frame, create_nav_button, create_button,
+    create_menu_label, create_logout_button
+)
 
 if TYPE_CHECKING:
     from ui.app import App
@@ -184,13 +187,8 @@ class ViewItemsFrame(ctk.CTkFrame):
     
     def _create_nav_buttons(self) -> None:
         """Create navigation menu buttons."""
-        create_nav_button(
-            self,
-            "MENU",
-            command=lambda: self.parent.show_frame(self.parent.login_frame),
-            y_position=0,
-            height=70
-        ).place(x=0, y=0)
+        # Menu label (non-clickable)
+        create_menu_label(self).place(x=0, y=0)
         
         create_nav_button(
             self,
@@ -221,6 +219,12 @@ class ViewItemsFrame(ctk.CTkFrame):
             "Report Missing Items",
             command=lambda: self.parent.show_frame(self.parent.report_item_frame)
         ).place(x=0, y=275)
+        
+        # Logout button
+        create_logout_button(
+            self,
+            command=self.parent.logout
+        ).place(x=0, y=326)
     
     def load_data(self) -> None:
         """Load and refresh items table data."""
