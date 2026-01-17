@@ -10,6 +10,7 @@ from ui.frames.dashboard_frame import DashboardFrame
 from ui.frames.view_items_frame import ViewItemsFrame
 from ui.frames.report_item_frame import ReportItemFrame
 from ui.frames.profile_frame import ProfileFrame
+from ui.frames.my_items_frame import MyItemsFrame
 
 
 class App(ctk.CTk):
@@ -23,7 +24,7 @@ class App(ctk.CTk):
         super().__init__()
         
         self.title("Lost and Found System")
-        self.geometry("1000x600")
+        self.geometry("1200x600")
         self.resizable(False, False)
         
         # Session state - stores current logged-in user ID
@@ -36,6 +37,7 @@ class App(ctk.CTk):
         self.view_items_frame = ViewItemsFrame(self)
         self.report_item_frame = ReportItemFrame(self)
         self.profile_frame = ProfileFrame(self)
+        self.my_items_frame = MyItemsFrame(self)
         
         # Show login frame first
         self.show_frame(self.login_frame)

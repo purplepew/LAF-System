@@ -39,7 +39,7 @@ class ReportItemFrame(ctk.CTkFrame):
         ctk.CTkFrame(
             self,
             width=500,
-            height=440,
+            height=500,
             fg_color=CARD_FORM
         ).place(x=350, y=130)
         
@@ -76,8 +76,22 @@ class ReportItemFrame(ctk.CTkFrame):
         self.desc_entry = create_form_entry(self, "e.g. Color: Blue Cotton, with money inside", 370, 405)
         self.desc_entry.place(x=370, y=405)
         
+        # Category
+        create_form_label(self, "Category", 370, 440).place(x=370, y=440)
+        self.category_entry = ctk.CTkComboBox(
+            self,
+            values=["Electronics", "Clothing", "Documents", "Accessories", "Books", "Other"],
+            width=460,
+            height=30,
+            fg_color="#f8f9fa",
+            text_color="black",
+            corner_radius=7
+        )
+        self.category_entry.set("Other")
+        self.category_entry.place(x=370, y=465)
+        
         # Image section
-        create_form_label(self, "Insert Image", 370, 440).place(x=370, y=440)
+        create_form_label(self, "Insert Image", 370, 500).place(x=370, y=500)
         
         ctk.CTkButton(
             self,
@@ -89,7 +103,7 @@ class ReportItemFrame(ctk.CTkFrame):
             corner_radius=5,
             border_width=0,
             command=self.browse_image
-        ).place(x=370, y=465)
+        ).place(x=370, y=525)
         
         self.file_label = ctk.CTkLabel(
             self,
@@ -97,7 +111,7 @@ class ReportItemFrame(ctk.CTkFrame):
             font=("Poppins", 10),
             text_color="black"
         )
-        self.file_label.place(x=430, y=470)
+        self.file_label.place(x=430, y=530)
         
         # Submit button
         ctk.CTkButton(
@@ -110,7 +124,7 @@ class ReportItemFrame(ctk.CTkFrame):
             corner_radius=5,
             border_width=0,
             command=self.submit_form
-        ).place(x=370, y=520)
+        ).place(x=370, y=560)
     
     def _create_nav_buttons(self) -> None:
         """Create navigation menu buttons."""
@@ -142,9 +156,15 @@ class ReportItemFrame(ctk.CTkFrame):
         
         create_nav_button(
             self,
+            "My Items",
+            command=lambda: self.parent.show_frame(self.parent.my_items_frame)
+        ).place(x=0, y=224)
+        
+        create_nav_button(
+            self,
             "Report Missing Items",
             command=lambda: self.parent.show_frame(self.parent.report_item_frame)
-        ).place(x=0, y=224)
+        ).place(x=0, y=275)
     
     def browse_image(self) -> None:
         """Open file dialog to select an image."""
@@ -180,6 +200,8 @@ class ReportItemFrame(ctk.CTkFrame):
         try:
             from database.queries import create_item
             
+            category = self.category_entry.get()
+            
             success = create_item(
                 current_id,
                 i_name,
@@ -188,7 +210,8 @@ class ReportItemFrame(ctk.CTkFrame):
                 i_time,
                 "LOST",  # Default type
                 i_desc,
-                self.image_path
+                self.image_path,
+                category
             )
             
             if success:
@@ -200,6 +223,7 @@ class ReportItemFrame(ctk.CTkFrame):
                 self.date_entry.delete(0, 'end')
                 self.time_entry.delete(0, 'end')
                 self.desc_entry.delete(0, 'end')
+                self.category_entry.set("Other")
                 self.file_label.configure(text="No file selected")
                 self.image_path = None
                 

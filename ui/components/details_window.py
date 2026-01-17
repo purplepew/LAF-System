@@ -52,7 +52,7 @@ class DetailsWindow(ctk.CTkToplevel):
         self.image_label.pack(pady=20)
         
         # Try to load image
-        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status)
+        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
         img_path = self.item_data[8] if len(self.item_data) > 8 else None
         
         if img_path and os.path.exists(img_path):
@@ -68,13 +68,14 @@ class DetailsWindow(ctk.CTkToplevel):
     
     def _create_details_display(self) -> None:
         """Create the details display labels."""
-        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status)
+        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
         item_name = self.item_data[1] if len(self.item_data) > 1 else "Unknown"
         description = self.item_data[7] if len(self.item_data) > 7 else "No description"
         landmark = self.item_data[2] if len(self.item_data) > 2 else "Unknown"
         date = self.item_data[3] if len(self.item_data) > 3 else "Unknown"
         time = self.item_data[4] if len(self.item_data) > 4 else "Unknown"
         status = self.item_data[9] if len(self.item_data) > 9 else "Unknown"
+        category = self.item_data[10] if len(self.item_data) > 10 else "Uncategorized"
         
         # Display item information
         ctk.CTkLabel(
@@ -98,6 +99,12 @@ class DetailsWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             self,
             text=f"Date: {date} at {time}",
+            font=("Poppins", 14)
+        ).pack(pady=5)
+        
+        ctk.CTkLabel(
+            self,
+            text=f"Category: {category}",
             font=("Poppins", 14)
         ).pack(pady=5)
         
@@ -137,7 +144,7 @@ class DetailsWindow(ctk.CTkToplevel):
     
     def handle_claim(self) -> None:
         """Handle item claiming with validation and database update."""
-        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status)
+        # item_data structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
         item_id = self.item_data[0]
         
         try:

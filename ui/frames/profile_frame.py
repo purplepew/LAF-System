@@ -2,6 +2,7 @@
 Profile frame displaying user information.
 """
 import customtkinter as ctk
+import tkinter.messagebox as messagebox
 from typing import TYPE_CHECKING
 from ui.styles import (
     create_header_frame, create_sidebar_frame, create_nav_button,
@@ -102,6 +103,17 @@ class ProfileFrame(ctk.CTkFrame):
             fg_color=CARD_PROFILE
         )
         self.pass_value.place(x=450, y=380)
+        
+        # Change password button
+        ctk.CTkButton(
+            self,
+            text="Change Password",
+            font=("Poppins", 12),
+            width=150,
+            height=30,
+            fg_color="#2b9348",
+            command=self.change_password
+        ).place(x=750, y=380)
     
     def _create_nav_buttons(self) -> None:
         """Create navigation menu buttons."""
@@ -133,9 +145,15 @@ class ProfileFrame(ctk.CTkFrame):
         
         create_nav_button(
             self,
+            "My Items",
+            command=lambda: self.parent.show_frame(self.parent.my_items_frame)
+        ).place(x=0, y=224)
+        
+        create_nav_button(
+            self,
             "Report Missing Items",
             command=lambda: self.parent.show_frame(self.parent.report_item_frame)
-        ).place(x=0, y=224)
+        ).place(x=0, y=275)
     
     def load_data(self) -> None:
         """Load and display current user information."""
@@ -166,4 +184,111 @@ class ProfileFrame(ctk.CTkFrame):
             self.header_name_label.configure(text="Error")
             self.name_value.configure(text="Failed to load")
             self.email_value.configure(text="Failed to load")
+    
+    def change_password(self) -> None:
+        """Open password change dialog."""
+        current_id = self.parent.current_user_id
+        
+        if not current_id:
+            messagebox.showerror("Error", "Please login first.")
+            return
+        
+        # Create password change dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Change Password")
+        dialog.geometry("400x250")
+        dialog.resizable(False, False)
+        
+        # Old password
+        ctk.CTkLabel(
+            dialog,
+            text="Current Password:",
+            font=("Poppins", 12, "bold")
+        ).place(x=20, y=20)
+        
+        old_pass_entry = ctk.CTkEntry(
+            dialog,
+            width=350,
+            height=30,
+            show="*"
+        )
+        old_pass_entry.place(x=20, y=50)
+        
+        # New password
+        ctk.CTkLabel(
+            dialog,
+            text="New Password:",
+            font=("Poppins", 12, "bold")
+        ).place(x=20, y=90)
+        
+        new_pass_entry = ctk.CTkEntry(
+            dialog,
+            width=350,
+            height=30,
+            show="*"
+        )
+        new_pass_entry.place(x=20, y=120)
+        
+        # Confirm new password
+        ctk.CTkLabel(
+            dialog,
+            text="Confirm New Password:",
+            font=("Poppins", 12, "bold")
+        ).place(x=20, y=160)
+        
+        confirm_pass_entry = ctk.CTkEntry(
+            dialog,
+            width=350,
+            height=30,
+            show="*"
+        )
+        confirm_pass_entry.place(x=20, y=190)
+        
+        def save_password():
+            old_pass = old_pass_entry.get().strip()
+            new_pass = new_pass_entry.get().strip()
+            confirm_pass = confirm_pass_entry.get().strip()
+            
+            # Validation
+            if not old_pass or not new_pass or not confirm_pass:
+                messagebox.showerror("Validation Error", "All fields are required.")
+                return
+            
+            if new_pass != confirm_pass:
+                messagebox.showerror("Validation Error", "New passwords do not match.")
+                return
+            
+            if len(new_pass) < 4:
+                messagebox.showerror("Validation Error", "Password must be at least 4 characters long.")
+                return
+            
+            try:
+                from database.queries import change_password
+                
+                success = change_password(current_id, old_pass, new_pass)
+                
+                if success:
+                    messagebox.showinfo("Success", "Password changed successfully!")
+                    dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Current password is incorrect.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to change password: {str(e)}")
+        
+        # Buttons
+        ctk.CTkButton(
+            dialog,
+            text="Change Password",
+            fg_color="#2b9348",
+            width=150,
+            command=save_password
+        ).place(x=50, y=220)
+        
+        ctk.CTkButton(
+            dialog,
+            text="Cancel",
+            fg_color="#6c757d",
+            width=150,
+            command=dialog.destroy
+        ).place(x=220, y=220)
 

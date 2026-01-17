@@ -41,6 +41,9 @@ class ViewItemsFrame(ctk.CTkFrame):
             fg_color="transparent"
         ).place(x=220, y=85)
         
+        # Search and filter section
+        self._create_search_filters()
+        
         # Table
         self._create_table()
         
@@ -51,7 +54,7 @@ class ViewItemsFrame(ctk.CTkFrame):
             command=self.open_details,
             fg_color="#0077b6",
             width=200
-        ).place(x=500, y=450)
+        ).place(x=600, y=460)
         
         # Double-click to open details
         self.tree.bind("<Double-1>", lambda event: self.open_details())
@@ -70,26 +73,114 @@ class ViewItemsFrame(ctk.CTkFrame):
             foreground="white"
         )
         
-        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Reported By", "Status")
+        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Reported By", "Status", "Category")
         self.tree = ttk.Treeview(
             self,
             columns=columns,
             show="headings",
-            height=15
+            height=12
         )
-        self.tree.place(x=210, y=135)
+        self.tree.place(x=210, y=200)
         
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=130)
+            if col == "Item Name":
+                self.tree.column(col, width=150)
+            elif col == "Category":
+                self.tree.column(col, width=120)
+            else:
+                self.tree.column(col, width=120)
         
         scroll_y = tk.Scrollbar(
             self,
             orient=tk.VERTICAL,
             command=self.tree.yview
         )
-        scroll_y.place(x=975, y=135, height=300)
+        scroll_y.place(x=1175, y=200, height=250)
         self.tree.configure(yscrollcommand=scroll_y.set)
+    
+    def _create_search_filters(self) -> None:
+        """Create search and filter UI components."""
+        # Search entry
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 12, "bold"),
+            text="Search:",
+            fg_color="transparent"
+        ).place(x=220, y=110)
+        
+        self.search_entry = ctk.CTkEntry(
+            self,
+            width=200,
+            height=30,
+            placeholder_text="Search items..."
+        )
+        self.search_entry.place(x=280, y=110)
+        self.search_entry.bind("<KeyRelease>", lambda e: self.apply_filters())
+        
+        # Status filter
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 12, "bold"),
+            text="Status:",
+            fg_color="transparent"
+        ).place(x=500, y=110)
+        
+        self.status_filter = ctk.CTkComboBox(
+            self,
+            values=["All", "OPEN", "CLAIMED"],
+            width=120,
+            height=30,
+            command=lambda x: self.apply_filters()
+        )
+        self.status_filter.set("All")
+        self.status_filter.place(x=560, y=110)
+        
+        # Type filter
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 12, "bold"),
+            text="Type:",
+            fg_color="transparent"
+        ).place(x=700, y=110)
+        
+        self.type_filter = ctk.CTkComboBox(
+            self,
+            values=["All", "LOST", "FOUND"],
+            width=120,
+            height=30,
+            command=lambda x: self.apply_filters()
+        )
+        self.type_filter.set("All")
+        self.type_filter.place(x=750, y=110)
+        
+        # Category filter
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 12, "bold"),
+            text="Category:",
+            fg_color="transparent"
+        ).place(x=220, y=150)
+        
+        self.category_filter = ctk.CTkComboBox(
+            self,
+            values=["All"],
+            width=200,
+            height=30,
+            command=lambda x: self.apply_filters()
+        )
+        self.category_filter.set("All")
+        self.category_filter.place(x=300, y=150)
+        
+        # Clear filters button
+        ctk.CTkButton(
+            self,
+            text="Clear Filters",
+            width=100,
+            height=30,
+            fg_color="#6c757d",
+            command=self.clear_filters
+        ).place(x=1080, y=150)
     
     def _create_nav_buttons(self) -> None:
         """Create navigation menu buttons."""
@@ -121,12 +212,32 @@ class ViewItemsFrame(ctk.CTkFrame):
         
         create_nav_button(
             self,
+            "My Items",
+            command=lambda: self.parent.show_frame(self.parent.my_items_frame)
+        ).place(x=0, y=224)
+        
+        create_nav_button(
+            self,
             "Report Missing Items",
             command=lambda: self.parent.show_frame(self.parent.report_item_frame)
-        ).place(x=0, y=224)
+        ).place(x=0, y=275)
     
     def load_data(self) -> None:
         """Load and refresh items table data."""
+        self.apply_filters()
+        self._update_category_filter()
+    
+    def _update_category_filter(self) -> None:
+        """Update category filter dropdown with available categories."""
+        try:
+            from database.queries import get_all_categories
+            categories = get_all_categories()
+            self.category_filter.configure(values=["All"] + categories)
+        except Exception as e:
+            print(f"Error loading categories: {e}")
+    
+    def apply_filters(self) -> None:
+        """Apply search and filter criteria to the table."""
         # Clear existing items
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -134,25 +245,51 @@ class ViewItemsFrame(ctk.CTkFrame):
         self.item_map = {}  # Reset map
         
         try:
-            from database.queries import get_all_items
+            from database.queries import search_items
             
-            items = get_all_items()
+            # Get filter values
+            search_term = self.search_entry.get().strip()
+            status_val = self.status_filter.get()
+            type_val = self.type_filter.get()
+            category_val = self.category_filter.get()
+            
+            # Convert "All" to None for query
+            status_filter = None if status_val == "All" else status_val
+            type_filter = None if type_val == "All" else type_val
+            category_filter = None if category_val == "All" else category_val
+            
+            # Search items
+            items = search_items(
+                search_term=search_term,
+                status_filter=status_filter,
+                type_filter=type_filter,
+                category_filter=category_filter
+            )
             
             for index, item in enumerate(items):
-                # item structure: (id, name, landmark, date, time, username, type, desc, image, status)
+                # item structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
                 row_values = (
                     item[1],  # name
                     item[2],  # landmark
                     item[3],  # date
                     item[4],  # time
                     item[5],  # username
-                    item[9] if len(item) > 9 else "Unknown"  # status
+                    item[9] if len(item) > 9 else "Unknown",  # status
+                    item[10] if len(item) > 10 else "Uncategorized"  # category
                 )
                 
                 self.tree.insert("", "end", iid=index, values=row_values)
                 self.item_map[index] = item
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load items: {str(e)}")
+    
+    def clear_filters(self) -> None:
+        """Clear all search and filter inputs."""
+        self.search_entry.delete(0, 'end')
+        self.status_filter.set("All")
+        self.type_filter.set("All")
+        self.category_filter.set("All")
+        self.apply_filters()
     
     def open_details(self) -> None:
         """Open details popup window for selected item."""

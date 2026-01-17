@@ -149,7 +149,7 @@ class DashboardFrame(ctk.CTkFrame):
             orient=tk.VERTICAL,
             command=self.tree.yview
         )
-        scroll_y.place(x=975, y=300, height=265)
+        scroll_y.place(x=1175, y=300, height=265)
         self.tree.configure(yscrollcommand=scroll_y.set)
     
     def _create_nav_buttons(self) -> None:
@@ -182,9 +182,15 @@ class DashboardFrame(ctk.CTkFrame):
         
         create_nav_button(
             self,
+            "My Items",
+            command=lambda: self.parent.show_frame(self.parent.my_items_frame)
+        ).place(x=0, y=224)
+        
+        create_nav_button(
+            self,
             "Report Missing Items",
             command=lambda: self.parent.show_frame(self.parent.report_item_frame)
-        ).place(x=0, y=224)
+        ).place(x=0, y=275)
     
     def load_data(self) -> None:
         """Load and refresh dashboard statistics and table data."""

@@ -186,7 +186,7 @@ def create_header_frame(
     """
     ctk.CTkFrame(
         parent,
-        width=800,
+        width=1000,
         height=70,
         fg_color=PRIMARY_COLOR,
         corner_radius=0
