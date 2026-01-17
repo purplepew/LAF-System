@@ -32,28 +32,28 @@ def login_user(username: str, password: str) -> Optional[int]:
         raise Exception(f"Login query error: {e}")
 
 
-def get_user_info(user_id: int) -> Optional[Tuple[str, str]]:
+def get_user_info(user_id: int) -> Optional[Tuple[str, str, str, str]]:
     """
-    Fetch username and email for a specific user ID.
+    Fetch username, email, first_name, and last_name for a specific user ID.
     
     Args:
         user_id: The user's ID
         
     Returns:
-        Tuple of (username, email) if found, None otherwise
+        Tuple of (username, email, first_name, last_name) if found, None otherwise
     """
     try:
         with connect_db() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT username, email FROM users WHERE id = ?
+                SELECT username, email, first_name, last_name FROM users WHERE id = ?
             """, (user_id,))
             return cursor.fetchone()
     except sqlite3.Error as e:
         raise Exception(f"Get user info error: {e}")
 
 
-def register_user(username: str, password: str, email: str) -> bool:
+def register_user(username: str, password: str, email: str, first_name: str = "", last_name: str = "") -> bool:
     """
     Create a new user account.
     
@@ -61,6 +61,8 @@ def register_user(username: str, password: str, email: str) -> bool:
         username: Username for the new account
         password: Password for the new account
         email: Email address for the new account
+        first_name: First name of the user
+        last_name: Last name of the user
         
     Returns:
         True if registration successful, False if username already exists
@@ -69,9 +71,9 @@ def register_user(username: str, password: str, email: str) -> bool:
         with connect_db() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (username, password, email) 
-                VALUES (?, ?, ?)
-            """, (username, password, email))
+                INSERT INTO users (username, password, email, first_name, last_name) 
+                VALUES (?, ?, ?, ?, ?)
+            """, (username, password, email, first_name, last_name))
             conn.commit()
             return True
     except sqlite3.IntegrityError:

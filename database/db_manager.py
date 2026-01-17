@@ -37,9 +37,25 @@ def ensure_tables() -> None:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL UNIQUE,
                     password TEXT NOT NULL,
-                    email TEXT NOT NULL
+                    email TEXT NOT NULL,
+                    first_name TEXT,
+                    last_name TEXT
                 )
             """)
+            
+            # Add first_name and last_name columns if they don't exist (for existing databases)
+            cursor.execute("""
+                PRAGMA table_info(users)
+            """)
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'first_name' not in columns:
+                cursor.execute("""
+                    ALTER TABLE users ADD COLUMN first_name TEXT
+                """)
+            if 'last_name' not in columns:
+                cursor.execute("""
+                    ALTER TABLE users ADD COLUMN last_name TEXT
+                """)
 
             # Create items table
             cursor.execute("""

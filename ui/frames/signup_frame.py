@@ -29,6 +29,12 @@ class SignupFrame(ctk.CTkFrame):
         create_title_label(self, "Create an Account", font_size=23).pack()
         
         # Input fields
+        self.first_name_entry = create_entry(self, "First Name")
+        self.first_name_entry.pack(pady=8)
+        
+        self.last_name_entry = create_entry(self, "Last Name")
+        self.last_name_entry.pack(pady=8)
+        
         self.username_entry = create_entry(self, "Username")
         self.username_entry.pack(pady=8)
         
@@ -62,12 +68,14 @@ class SignupFrame(ctk.CTkFrame):
     
     def handle_register(self) -> None:
         """Handle registration with input validation."""
+        first_name = self.first_name_entry.get().strip()
+        last_name = self.last_name_entry.get().strip()
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
         email = self.email_entry.get().strip()
         
         # Input validation
-        if not username or not password or not email:
+        if not first_name or not last_name or not username or not password or not email:
             messagebox.showerror("Validation Error", "All fields are required.")
             self.error_label.configure(text="All fields are required.")
             return
@@ -81,12 +89,14 @@ class SignupFrame(ctk.CTkFrame):
         try:
             from database.queries import register_user
             
-            success = register_user(username, password, email)
+            success = register_user(username, password, email, first_name, last_name)
             
             if success:
                 messagebox.showinfo("Success", "Account created successfully! Redirecting to login...")
                 
                 # Clear inputs
+                self.first_name_entry.delete(0, 'end')
+                self.last_name_entry.delete(0, 'end')
                 self.username_entry.delete(0, 'end')
                 self.password_entry.delete(0, 'end')
                 self.email_entry.delete(0, 'end')

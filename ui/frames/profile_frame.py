@@ -36,7 +36,7 @@ class ProfileFrame(ctk.CTkFrame):
         ctk.CTkFrame(
             self,
             width=600,
-            height=300,
+            height=400,
             fg_color=CARD_PROFILE,
             corner_radius=20
         ).place(x=300, y=150)
@@ -56,38 +56,68 @@ class ProfileFrame(ctk.CTkFrame):
             text="Loading...",
             fg_color=CARD_PROFILE
         )
-        self.header_name_label.place(x=320, y=230)
+        self.header_name_label.place(x=320, y=220)
         
         # Field labels
         ctk.CTkLabel(
             self,
             font=("Poppins", 15, "bold"),
-            text="Name:",
+            text="First Name:",
+            fg_color=CARD_PROFILE
+        ).place(x=320, y=260)
+        
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 15, "bold"),
+            text="Last Name:",
             fg_color=CARD_PROFILE
         ).place(x=320, y=300)
         
         ctk.CTkLabel(
             self,
             font=("Poppins", 15, "bold"),
-            text="Email:",
+            text="Username:",
             fg_color=CARD_PROFILE
         ).place(x=320, y=340)
         
         ctk.CTkLabel(
             self,
             font=("Poppins", 15, "bold"),
-            text="Password:",
+            text="Email:",
             fg_color=CARD_PROFILE
         ).place(x=320, y=380)
         
+        ctk.CTkLabel(
+            self,
+            font=("Poppins", 15, "bold"),
+            text="Password:",
+            fg_color=CARD_PROFILE
+        ).place(x=320, y=420)
+        
         # Value labels
-        self.name_value = ctk.CTkLabel(
+        self.first_name_value = ctk.CTkLabel(
             self,
             font=("Poppins", 15),
             text="...",
             fg_color=CARD_PROFILE
         )
-        self.name_value.place(x=450, y=300)
+        self.first_name_value.place(x=500, y=260)
+        
+        self.last_name_value = ctk.CTkLabel(
+            self,
+            font=("Poppins", 15),
+            text="...",
+            fg_color=CARD_PROFILE
+        )
+        self.last_name_value.place(x=500, y=300)
+        
+        self.username_value = ctk.CTkLabel(
+            self,
+            font=("Poppins", 15),
+            text="...",
+            fg_color=CARD_PROFILE
+        )
+        self.username_value.place(x=500, y=340)
         
         self.email_value = ctk.CTkLabel(
             self,
@@ -95,7 +125,7 @@ class ProfileFrame(ctk.CTkFrame):
             text="...",
             fg_color=CARD_PROFILE
         )
-        self.email_value.place(x=450, y=340)
+        self.email_value.place(x=500, y=380)
         
         self.pass_value = ctk.CTkLabel(
             self,
@@ -103,7 +133,7 @@ class ProfileFrame(ctk.CTkFrame):
             text="********",
             fg_color=CARD_PROFILE
         )
-        self.pass_value.place(x=450, y=380)
+        self.pass_value.place(x=500, y=420)
         
         # Change password button
         ctk.CTkButton(
@@ -114,7 +144,7 @@ class ProfileFrame(ctk.CTkFrame):
             height=30,
             fg_color="#2b9348",
             command=self.change_password
-        ).place(x=750, y=380)
+        ).place(x=750, y=420)
     
     def _create_nav_buttons(self) -> None:
         """Create navigation menu buttons."""
@@ -163,7 +193,9 @@ class ProfileFrame(ctk.CTkFrame):
         
         if not current_id:
             self.header_name_label.configure(text="Guest")
-            self.name_value.configure(text="Not logged in")
+            self.first_name_value.configure(text="Not logged in")
+            self.last_name_value.configure(text="Not logged in")
+            self.username_value.configure(text="Not logged in")
             self.email_value.configure(text="Not logged in")
             return
         
@@ -173,18 +205,31 @@ class ProfileFrame(ctk.CTkFrame):
             user_info = get_user_info(current_id)
             
             if user_info:
-                username, email = user_info
-                self.header_name_label.configure(text=username)
-                self.name_value.configure(text=username)
+                username, email, first_name, last_name = user_info
+                # Use full name for header if available, otherwise username
+                if first_name and last_name:
+                    display_name = f"{first_name} {last_name}"
+                elif first_name:
+                    display_name = first_name
+                else:
+                    display_name = username
+                self.header_name_label.configure(text=display_name)
+                self.first_name_value.configure(text=first_name if first_name else "N/A")
+                self.last_name_value.configure(text=last_name if last_name else "N/A")
+                self.username_value.configure(text=username)
                 self.email_value.configure(text=email)
             else:
                 self.header_name_label.configure(text="User not found")
-                self.name_value.configure(text="N/A")
+                self.first_name_value.configure(text="N/A")
+                self.last_name_value.configure(text="N/A")
+                self.username_value.configure(text="N/A")
                 self.email_value.configure(text="N/A")
         except Exception as e:
             print(f"Error loading profile: {e}")
             self.header_name_label.configure(text="Error")
-            self.name_value.configure(text="Failed to load")
+            self.first_name_value.configure(text="Failed to load")
+            self.last_name_value.configure(text="Failed to load")
+            self.username_value.configure(text="Failed to load")
             self.email_value.configure(text="Failed to load")
     
     def change_password(self) -> None:
