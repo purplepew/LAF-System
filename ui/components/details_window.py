@@ -92,6 +92,12 @@ class DetailsWindow(ctk.CTkToplevel):
         
         ctk.CTkLabel(
             self,
+            text=f"Type: {self.item_data[6] if len(self.item_data) > 6 else 'Unknown'}",
+            font=("Poppins", 14)
+        ).pack(pady=5)
+        
+        ctk.CTkLabel(
+            self,
             text=f"Location: {landmark}",
             font=("Poppins", 14)
         ).pack(pady=5)

@@ -24,7 +24,7 @@ class App(ctk.CTk):
         super().__init__()
         
         self.title("Lost and Found System")
-        self.geometry("1200x600")
+        self.geometry("1200x700")
         self.resizable(False, False)
         
         # Session state - stores current logged-in user ID

@@ -90,7 +90,7 @@ class MyItemsFrame(ctk.CTkFrame):
             foreground="white"
         )
         
-        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Status", "Category")
+        columns = ("Item Name", "Type", "Landmark", "Date Found", "Time Found", "Status", "Category")
         self.tree = ttk.Treeview(
             self,
             columns=columns,
@@ -103,8 +103,10 @@ class MyItemsFrame(ctk.CTkFrame):
             self.tree.heading(col, text=col)
             if col == "Item Name":
                 self.tree.column(col, width=150)
+            elif col == "Type":
+                self.tree.column(col, width=80)
             else:
-                self.tree.column(col, width=130)
+                self.tree.column(col, width=120)
         
         scroll_y = tk.Scrollbar(
             self,
@@ -177,6 +179,7 @@ class MyItemsFrame(ctk.CTkFrame):
                 # item structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
                 row_values = (
                     item[1],  # name
+                    item[6] if len(item) > 6 else "Unknown",  # type
                     item[2],  # landmark
                     item[3],  # date
                     item[4],  # time

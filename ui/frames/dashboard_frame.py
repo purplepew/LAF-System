@@ -132,7 +132,7 @@ class DashboardFrame(ctk.CTkFrame):
             foreground="white"
         )
         
-        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Status")
+        columns = ("Item Name", "Type", "Landmark", "Date Found", "Time Found", "Status")
         self.tree = ttk.Treeview(
             self,
             columns=columns,
@@ -143,7 +143,10 @@ class DashboardFrame(ctk.CTkFrame):
         
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=155)
+            if col == "Type":
+                self.tree.column(col, width=80)
+            else:
+                self.tree.column(col, width=140)
         
         scroll_y = tk.Scrollbar(
             self,
@@ -223,9 +226,10 @@ class DashboardFrame(ctk.CTkFrame):
             items = get_all_items()
             
             for item in items:
-                # item structure: (id, name, landmark, date, time, username, type, desc, image, status)
+                # item structure: (id, name, landmark, date, time, username, type, desc, image, status, category)
                 status = item[9] if len(item) > 9 else "Unknown"
-                row_data = (item[1], item[2], item[3], item[4], status)
+                item_type = item[6] if len(item) > 6 else "Unknown"
+                row_data = (item[1], item_type, item[2], item[3], item[4], status)
                 self.tree.insert("", "end", values=row_data)
         except Exception as e:
             print(f"Error loading dashboard table: {e}")
