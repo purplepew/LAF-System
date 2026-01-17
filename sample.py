@@ -361,16 +361,6 @@ class DashboardFrame(ctk.CTkFrame):
             self.tree.insert("", "end", values=row_data)
 
 
-
-
-
-
-
-
-
-
-
-
 class UserProfileFrame(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -408,10 +398,6 @@ class UserProfileFrame(ctk.CTkFrame):
         ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=300)
         ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=340)
         ctk.CTkButton(self, text="Edit", font=("Poppins", 15), width=50, height=15, fg_color="#2b9348", corner_radius=3).place(x=825, y=380)
-
-        # ... (Menu Buttons remain the same) ...
-        # (Copy your existing menu buttons here)
-
     
         ctk.CTkButton(
             self,
@@ -421,7 +407,7 @@ class UserProfileFrame(ctk.CTkFrame):
             width=200,
             fg_color="#2b9348",
             corner_radius=0,
-            command=lambda: parent.show_frame(parent.login_frame)
+            #command=lambda: parent.show_frame(parent.viewlostitem_frame)
         ).place(x=0, y=0)
 
         ctk.CTkButton(
@@ -454,7 +440,7 @@ class UserProfileFrame(ctk.CTkFrame):
             width=200,
             fg_color="#2b9348",
             corner_radius=0,
-            command=lambda: parent.show_frame(parent.login_frame)
+            command=lambda: parent.show_frame(parent.viewlostitem_frame)
         ).place(x=0, y=173)
 
         ctk.CTkButton(
@@ -465,7 +451,7 @@ class UserProfileFrame(ctk.CTkFrame):
             width=200,
             fg_color="#2b9348",
             corner_radius=0,
-            command=lambda: parent.show_frame(parent.login_frame)
+            command=lambda: parent.show_frame(parent.reportmissingitem_frame)
         ).place(x=0, y=224)
 
     def load_data(self):
