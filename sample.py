@@ -277,30 +277,22 @@ class DashboardFrame(ctk.CTkFrame):
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Treeview.Heading", background="#2b9348", font=("Poppins", 10, "bold"), foreground="white")
-        #style.configure("Treeview", background="#2b9348")
         
         columns = ("Item Name", "Landmark", "Date Found", "Time Found")
-        tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
-        tree.place(x=210, y=300)
+        
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
+        self.tree.place(x=210, y=300)
         
         for col in columns:
-            tree.heading(col, text=col.capitalize() )
-            tree.column(col, width=195)
+            self.tree.heading(col, text=col.capitalize() )
+            self.tree.column(col, width=195)
 
-        # --- ADDED CODE START ---
-        items = get_all_items()
-
-        for item in items:
-            # We only need the first 4 items: Name, Landmark, Date, Time
-            # item[0] is Name, item[1] is Landmark, etc.
-            row_data = (item[0], item[1], item[2], item[3])
-            
-            tree.insert("", "end", values=row_data)
-        # --- ADDED CODE END ---
-
-        scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=tree.yview)
+        scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
         scroll_y.place(x=975, y=335, height=265)
-        tree.configure(yscrollcommand=scroll_y.set)
+        self.tree.configure(yscrollcommand=scroll_y.set)
+
+        #LOAD
+        self.load_data()
 
         ctk.CTkButton(
             self,
@@ -358,7 +350,20 @@ class DashboardFrame(ctk.CTkFrame):
         ).place(x=0, y=224)
 
 
+    def load_data(self):
+        """Refreshes the table data."""
+        # A. Clear existing items
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
+        # B. Get new items from DB
+        items = get_all_items()
+
+        # C. Insert into table
+        for item in items:
+            # item[0]=Name, item[1]=Landmark, item[2]=Date, item[3]=Time
+            row_data = (item[0], item[1], item[2], item[3])
+            self.tree.insert("", "end", values=row_data)
 
 
 
@@ -493,10 +498,6 @@ class UserProfileFrame(ctk.CTkFrame):
         else:
             print("No user logged in.")
             self.header_name_label.configure(text="Guest")
-
-
-
-
 
 
 class ViewLostItemFrame(ctk.CTkFrame):
