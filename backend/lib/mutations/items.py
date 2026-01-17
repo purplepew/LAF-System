@@ -26,10 +26,11 @@ def seed_items():
         conn.commit()
         print("Successfully added 4 test items.")
 
-def create_new_item(user_id, item_name, landmark, date_found, time_found, item_type, description):
+def create_new_item(user_id, item_name, landmark, date_found, time_found, item_type, description, image_path=None):
     with connect_db() as conn:
         cursor = conn.cursor()
 
+        # Added image_path column
         cursor.execute("""
             INSERT INTO items (
                 user_id, 
@@ -38,8 +39,20 @@ def create_new_item(user_id, item_name, landmark, date_found, time_found, item_t
                 date_found, 
                 time_found, 
                 type, 
-                description
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (user_id, item_name, landmark, date_found, time_found, item_type, description))
+                description,
+                image_path
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, item_name, landmark, date_found, time_found, item_type, description, image_path))
         
         conn.commit()
+
+def mark_item_as_claimed(item_id):
+    try:
+        with connect_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE items SET status = 'CLAIMED' WHERE id = ?", (item_id,))
+            conn.commit()
+            return True
+    except Exception as e:
+        print(f"Error claiming item: {e}")
+        return False

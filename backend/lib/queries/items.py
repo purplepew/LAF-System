@@ -1,20 +1,22 @@
 from ..utils import connect_db
 
 def get_all_items():
-    """Fetch all items and join with users table to get names."""
+    """Fetch all items including the ID."""
     with connect_db() as conn:
         cursor = conn.cursor()
         
-        # We perform a JOIN to get 'users.name' based on 'items.user_id'
         cursor.execute("""
             SELECT 
-                items.item_name, 
-                items.landmark, 
-                items.date_found, 
-                items.time_found, 
-                users.username,       
-                items.type, 
-                items.description 
+                items.id,             -- [0] ID
+                items.item_name,      -- [1] Name
+                items.landmark,       -- [2] Landmark
+                items.date_found,     -- [3] Date
+                items.time_found,     -- [4] Time
+                users.username,       -- [5] User (Joined)
+                items.type,           -- [6] Type
+                items.description,    -- [7] Description
+                items.image_path,     -- [8] Image Path
+                items.status          -- [9] Status <--- MUST BE HERE
             FROM items
             JOIN users ON items.user_id = users.id
         """)

@@ -1,4 +1,5 @@
-#from PIL import Image
+from PIL import Image
+import os # To check if file exists
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import ttk, filedialog
@@ -10,6 +11,7 @@ from backend.lib.queries.users import login_user
 from backend.lib.queries.users import get_user_info
 
 from backend.lib.mutations.items import create_new_item
+from backend.lib.mutations.items import mark_item_as_claimed
 from backend.lib.mutations.users import register_user
 from backend.lib.utils import ensure_tables
 
@@ -19,13 +21,6 @@ ensure_tables()
 ctk.set_appearance_mode("System")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
-def browse_image():
-    filename = filedialog.askopenfilename(
-        title="Select Image",
-        filetypes=[("Image Files", "*.png *.jpg *.jpeg *.gif *.bmp")]
-    )
-    if filename:
-        image_var.set(filename)
 
 class App(ctk.CTk):
     def __init__(self):
@@ -506,31 +501,43 @@ class ViewLostItemFrame(ctk.CTkFrame):
 
         self.place(relwidth=1, relheight=1)
 
+        # Dictionary to store full item data hidden from the table
+        self.item_map = {} 
+
         ctk.CTkFrame(self, width=800, height=70, fg_color="#2b9348", corner_radius=0).place(x=201, y=0)
         ctk.CTkFrame(self, width=200, height=330, fg_color="#2b9348", corner_radius=0).place(x=0, y=275)
         ctk.CTkLabel(self, font=("Poppins", 20, "bold"),text="Lost and Found System", fg_color="#2b9348", ).place(x=230, y=17)
 
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="View Lost Items", fg_color="transparent", ).place(x=220, y=85)
 
+        # --- TABLE ---
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Treeview.Heading", background="#2b9348", font=("Poppins", 10, "bold"), foreground="white")
-        #style.configure("Treeview", background="#2b9348")
         
-        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Reported By", "Action")
-
-        # We use self.tree so we can access it in other functions
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=20)
+        columns = ("Item Name", "Landmark", "Date Found", "Time Found", "Reported By", "Status")
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
         self.tree.place(x=210, y=135)
         
-        
         for col in columns:
-            self.tree.heading(col, text=col.capitalize() )
+            self.tree.heading(col, text=col.capitalize())
             self.tree.column(col, width=130)
 
         scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        scroll_y.place(x=975, y=170, height=265)
+        scroll_y.place(x=975, y=135, height=300) # Adjusted height
         self.tree.configure(yscrollcommand=scroll_y.set)
+
+        # --- NEW: VIEW BUTTON ---
+        ctk.CTkButton(
+            self, 
+            text="View Selected Details & Image", 
+            fg_color="#0077b6", 
+            width=200, 
+            command=self.open_details
+        ).place(x=500, y=450) # Placed below the table
+
+        # Optional: Allow double-click on row
+        self.tree.bind("<Double-1>", lambda event: self.open_details())
 
         # --- Load Initial Data ---
         self.load_data()
@@ -591,38 +598,116 @@ class ViewLostItemFrame(ctk.CTkFrame):
         ).place(x=0, y=224)
 
     def load_data(self):
-        """Fetches fresh data from the database and updates the table."""
-        # 1. Clear the current table
+        """Fetches data and fills the table."""
         for item in self.tree.get_children():
             self.tree.delete(item)
+            
+        self.item_map = {} # Reset map
 
-        # 2. Fetch new data
         try:
-            items = get_all_items() # Returns list of tuples
+            items = get_all_items() 
             
-            # 3. Insert data
-            for item in items:
-                # Our query returns: (name, landmark, date, time, type, description)
-                # We only need the first 4 for this table
-                row_values = (item[0], item[1], item[2], item[3], item[4], "Claim")
-                self.tree.insert("", "end", values=row_values)
+            for index, item in enumerate(items):
+                # We skip item[0] (ID) for the visual table
+                # item[1]=Name, item[2]=Landmark, item[3]=Date, item[4]=Time, item[5]=User item[9]=Status
+                row_values = (
+                    item[1],
+                    item[2],
+                    item[3],
+                    item[4],
+                    item[5],
+                    item[9]
+                )
                 
-            print(f"Loaded {len(items)} items into the table.") # Debug message
-            
+                self.tree.insert("", "end", iid=index, values=row_values)
+     
+                self.item_map[index] = item
+                
         except Exception as e:
             print(f"Error loading data: {e}")
+
+    def open_details(self):
+        """Opens the popup for the selected item."""
+        selected_item = self.tree.selection()
+        
+        if not selected_item:
+            print("Please select an item first.")
+            return
+
+        # Get the internal ID (iid) of the selected row
+        row_id = int(selected_item[0])
+        
+        # Retrieve the full data from our hidden map
+        full_data = self.item_map.get(row_id)
+        
+        if full_data:
+            # Open the popup
+            ItemDetailsWindow(self, full_data)
+
+
+
+class ItemDetailsWindow(ctk.CTkToplevel):
+    def __init__(self, parent, item_data):
+        super().__init__(parent)
+        self.title("Item Details")
+        self.geometry("400x600")
+        
+        self.item_data = item_data 
+        self.parent = parent
+        # --- IMAGE ---
+        self.image_label = ctk.CTkLabel(self, text="No Image", width=300, height=200, fg_color="gray")
+        self.image_label.pack(pady=20)
+        
+        # Try to load image (Assuming image path is at the end, index -1)
+        # CHANGE '-1' to the actual index of your image path column in database
+        img_path = item_data[8] 
+
+        #debuging
+        print(f"Trying to load image from: {img_path}")
+
+        if img_path and os.path.exists(img_path):
+            try:
+                my_image = ctk.CTkImage(light_image=Image.open(img_path), size=(300, 200))
+                self.image_label.configure(image=my_image, text="") 
+            except:
+                pass
+
+        # --- DETAILS ---
+        # Displaying Name (Index 0)
+        ctk.CTkLabel(self, text=f"Item: {item_data[0]}", font=("Poppins", 20, "bold")).pack(pady=5)
+        
+        # Displaying Description (Assuming Index 5, adjust if needed)
+        ctk.CTkLabel(self, text=f"Description: {item_data[5]}", font=("Poppins", 14)).pack(pady=5)
+        
+        ctk.CTkLabel(self, text=f"Location: {item_data[1]}", font=("Poppins", 14)).pack(pady=5)
+        ctk.CTkLabel(self, text=f"Date: {item_data[2]} at {item_data[3]}", font=("Poppins", 14)).pack(pady=5)
+
+        # --- BUTTONS ---
+        ctk.CTkButton(self, text="Claim Item", fg_color="#2b9348", command=self.handle_claim).pack(pady=20)
+        ctk.CTkButton(self, text="Close", fg_color="red", command=self.destroy).pack(pady=5)
+
+    def handle_claim(self):
+        # Get ID from the first position
+        item_id = self.item_data[0] 
+        
+        # Call the backend function
+        success = mark_item_as_claimed(item_id)
+        
+        if success:
+            print("Claimed!")
+            self.parent.load_data() # Refresh table
+            self.destroy()
+
 
 
 
 class ReportMissingItemFrame(ctk.CTkFrame):
-
-    
-
     def __init__(self, parent):
         super().__init__(parent)
 
         self.place(relwidth=1, relheight=1)
 
+        self.image_path = None 
 
         # --- Layout & Header ---
         ctk.CTkFrame(self, width=800, height=70, fg_color="#2b9348", corner_radius=0).place(x=201, y=0)
@@ -657,7 +742,7 @@ class ReportMissingItemFrame(ctk.CTkFrame):
         self.desc_entry = ctk.CTkEntry(self, fg_color="#f8f9fa", width=460, height=30 , text_color="black", placeholder_text="e.g. Color: Blue Cotton, with money inside", corner_radius=7)
         self.desc_entry.place(x=370, y=405)
 
-        # Image Button
+        # --- IMAGE SECTION ---
         ctk.CTkLabel(self, font=("Poppins", 15, "bold"),text="Insert Image", fg_color="#6c757d", text_color="White").place(x=370, y=440)
         ctk.CTkButton(
             self,
@@ -668,8 +753,12 @@ class ReportMissingItemFrame(ctk.CTkFrame):
             fg_color="#2b9348",
             corner_radius=5,
             border_width=0,
-            command=browse_image
+            command=self.browse_image
         ).place(x=370, y=465)
+
+        self.file_label = ctk.CTkLabel(self, text="No file selected", font=("Poppins", 10), text_color="black")
+        self.file_label.place(x=430, y=470)
+
 
         # Submit Button
         ctk.CTkButton(
@@ -741,27 +830,47 @@ class ReportMissingItemFrame(ctk.CTkFrame):
             command=lambda: parent.show_frame(parent.reportmissingitem_frame)
         ).place(x=0, y=224)
 
+    def browse_image(self):
+        filename = filedialog.askopenfilename(
+            title="Select Image",
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg *.gif *.bmp")]
+        )
+        if filename:
+            self.image_path = filename # Save to self
+            # Update label to show only the filename, not full path
+            self.file_label.configure(text=os.path.basename(filename))
+
     def submit_form(self):
         """Gets text from entries and saves to database."""
-        # 1. Get the text from the inputs
         i_name = self.name_entry.get()
         i_landmark = self.landmark_entry.get()
         i_date = self.date_entry.get()
         i_time = self.time_entry.get()
         i_desc = self.desc_entry.get()
+        
+        # Get current user
+        current_id = self.master.current_user_id 
 
-                # 2. Call the database function
-                # We use '1' as a temporary user_id (1 is the user_id of Leeex lex@gmail.com)
-                # We use 'LOST' as the default type (you can change this logic later)
+        if not current_id:
+            print("Error: Please login first.")
+            return
+
         try:
-            create_new_item(1, i_name, i_landmark, i_date, i_time, "LOST", i_desc)
+            # 5. Pass self.image_path to the database
+            # NOTE: You must update your backend 'create_new_item' to accept this extra argument!
+            create_new_item(current_id, i_name, i_landmark, i_date, i_time, "LOST", i_desc, self.image_path)
+            
             print("Item saved successfully!")
-                    
-                # Optional: Clear the boxes after submitting
+            
+            # Clear inputs
             self.name_entry.delete(0, 'end')
             self.landmark_entry.delete(0, 'end')
-                    # ... clear others ...
-                    
+            self.date_entry.delete(0, 'end')
+            self.time_entry.delete(0, 'end')
+            self.desc_entry.delete(0, 'end')
+            self.file_label.configure(text="No file selected")
+            self.image_path = None
+            
         except Exception as e:
             print(f"Error saving: {e}")
 
